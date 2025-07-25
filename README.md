@@ -57,10 +57,12 @@ It's recommended to use a virtual environment.
 python -m venv venv
 venv\Scripts\activate     # On Windows
 pip install -r requirements.txt
+```
 
 If you don’t have a requirements.txt, install dependencies manually:
+```
 pip install selenium streamlit pandas openpyxl pydub pyautogui
-
+```
 
 Also install `ffmpeg` (required for audio CAPTCHA decoding):
 
@@ -68,10 +70,12 @@ Also install `ffmpeg` (required for audio CAPTCHA decoding):
 - Extract it and add the folder to your system's PATH
 - Ensure `ffmpeg.exe` is accessible in command line
 
----
+
 
 ### ▶️ Step 2: Run the App
+```
 streamlit run app.py
+```
 
 - This will open a browser-based interface
 - You’ll be asked to enter the Excel file path and a download folder path
