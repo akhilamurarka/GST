@@ -8,15 +8,15 @@ model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
 
 # Optional: handle words like "seven" → "7"
 word_to_digit = {
-    "zero": "0", "oh": "0", "o": "0","zeril":'0',"zerel":'0','zereol':'0','zelo':'0','zemo':'0','zere':'0','zarol':'0','zyril':'0','zyral':'0','zeral':'0',
+    "zero": "0", "oh": "0", "o": "0","zeril":'0',"zerel":'0','zereol':'0','zelo':'0','zemo':'0','zere':'0','zarol':'0','zyril':'0','zyral':'0','zeral':'0','zyro':'0',
     "one": "1", "won": "1", "juan": "1","when":'1','wen':'1','ene':'1','wone':"1",'on':'1',
     "two": "2", "to": "2", "too": "2","thwo":'2','tro':'2',
     "three": "3", "tree": "3", "fhree": "3","hree":"3","free":"3",'thrty':'3','thre':'3','threw':'3','thirty':'3',
     "four": "4", "for": "4", "fore": "4",
     "five": "5", "fine": "5", "far": "5", "fire": "5",'fie':'5','fine':'5',
     "six": "6", "sics": "6", "sex": "6", "siks": "6", "siic": "6","suics":"6",'seics':'6','sixs':'6','sixh':'6','sucs':'6','sircs':'6',
-    "seven": "7", "sevin": "7", "savin": "7","semen":"7","sevn":"7","sem":"7","servan":"7","sam":"7","seve":'7','servant':'7','seveny':'7','several':'7','saysin':'7','siven':'7',
-    "eight": "8", "ate": "8", "ait": "8",'eit':'8','ay':'8',
+    "seven": "7", "sevin": "7", "savin": "7","semen":"7","sevn":"7","sem":"7","servan":"7","sam":"7","seve":'7','servant':'7','seveny':'7','several':'7','saysin':'7','siven':'7','sever':'7',
+    "eight": "8", "ate": "8", "ait": "8",'eit':'8','ay':'8','at':'8','eight':'8',
     "nine": "9", "nien": "9", "none": "9", "mine": "9","narn":"9"
 }
 
