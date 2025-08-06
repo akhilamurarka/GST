@@ -13,10 +13,10 @@ It includes:
 
 ## 📂 Folder Structure
 
-GST-Automation/
-├── app.py                  # Main Streamlit + Automation Script
-├── credentials.xlsx        # Input Excel file with user credentials
-├── word_extractor.py       # Custom module to transcribe audio CAPTCHA
+GST-Automation/  
+├── app.py                  # Main Streamlit + Automation Script  
+├── credentials.xlsx        # Input Excel file with user credentials  
+├── word_extractor.py       # Custom module to transcribe audio CAPTCHA  
 ├── README.md               # This file
 
 ---
