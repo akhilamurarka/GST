@@ -1,1 +1,8 @@
 .env
+
+myenv310/
+__pycache__/
+saved_models/
+wav2vec2-captcha-final/
+wav2vec2-captcha/
+data/
