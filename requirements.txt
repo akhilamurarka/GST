@@ -90,10 +90,10 @@ tenacity==9.1.2
 threadpoolctl==3.6.0
 tokenizers==0.15.2
 toml==0.10.2
-torch==2.0.0+cpu
+torch==2.0.0
 torchaudio==2.0.0
 torchcodec==0.0.0.dev0
-torchvision==0.15.1+cpu
+torchvision==0.15.1
 tornado==6.5.1
 tqdm==4.67.1
 transformers==4.37.2
