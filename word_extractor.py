@@ -8,9 +8,9 @@ model = Wav2Vec2ForCTC.from_pretrained("facebook/wav2vec2-base-960h")
 
 # Optional: handle words like "seven" → "7"
 word_to_digit = {
-    "zero": "0", "oh": "0", "o": "0","zeril":'0',"zerel":'0','zereol':'0','zelo':'0','zemo':'0','zere':'0','zarol':'0','zyril':'0','zyral':'0','zeral':'0','zyro':'0',
+    "zero": "0", "oh": "0", "zeril":'0',"zerel":'0','zereol':'0','zelo':'0','zemo':'0','zere':'0','zarol':'0','zyril':'0','zyral':'0','zeral':'0','zyro':'0',
     "one": "1", "won": "1", "juan": "1","when":'1','wen':'1','ene':'1','wone':"1",'on':'1',
-    "two": "2", "to": "2", "too": "2","thwo":'2','tro':'2',
+    "two": "2", "to": "2", "too": "2","thwo":'2','tro':'2','tu':'2',
     "three": "3", "tree": "3", "fhree": "3","hree":"3","free":"3",'thrty':'3','thre':'3','threw':'3','thirty':'3',
     "four": "4", "for": "4", "fore": "4",
     "five": "5", "fine": "5", "far": "5", "fire": "5",'fie':'5','fine':'5',
