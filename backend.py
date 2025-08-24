@@ -41,6 +41,9 @@ def Chrome_setup(download_path):
         "safebrowsing.disable_download_protection": True,
     }
     options.add_argument("--start-maximized")
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     options.add_experimental_option("prefs", prefs)
     return webdriver.Chrome(options=options)
 
