@@ -7,7 +7,7 @@ st.set_page_config(layout="centered")
 st.title("📄 Automated GST Downloader")
 
 excel_file = st.file_uploader("Upload Excel file", type=["xlsx", "xls"])
-# download_path = st.text_input("Download folder path", value=os.path.expanduser("~\\Downloads"))
+download_path = st.text_input("Download folder path", value=os.path.expanduser("~\\Downloads"))
 
 with st.sidebar:
     sender_email = st.text_input("Sender's Email")
@@ -24,12 +24,10 @@ with st.sidebar:
     email_subject = st.text_input("Email Subject", value="Your GST Excel File")
     email_body = st.text_area("Email Content", value="Please find your GST Excel file attached.")
 
-if st.button("Process") and excel_file:
-# if st.button("Process") and excel_file and download_path:
-    # if not os.path.isdir(download_path):
-    #     st.error("❌ Download folder path is invalid.")
-    # elif not sender_email or not sender_app_password:
-    if not sender_email or not sender_app_password:
+if st.button("Process") and excel_file and download_path:
+    if not os.path.isdir(download_path):
+        st.error("❌ Download folder path is invalid.")
+    elif not sender_email or not sender_app_password:
         st.error("❌ Please provide sender's email and app password in the sidebar.")
     else:
         try:
@@ -38,8 +36,6 @@ if st.button("Process") and excel_file:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp_file:
                 tmp_file.write(excel_file.read())
                 tmp_excel_path = tmp_file.name
-                
-            download_path = tempfile.mkdtemp()  # always valid temp folder
 
             progress_bar = st.progress(0)
             status_text = st.empty()
