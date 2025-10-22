@@ -12,8 +12,6 @@ from word_extractor import transcribe_wav_to_digits
 from config import month_name_to_number,quarter_text_map,get_quarter_from_month,month_small_to_big,TIMEOUT
 import smtplib
 from email.message import EmailMessage
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 # Set ffmpeg and ffprobe paths manually
 AudioSegment.converter = which("ffmpeg")
@@ -42,12 +40,12 @@ def Chrome_setup(download_path):
         "safebrowsing.enabled": True,
         "safebrowsing.disable_download_protection": True,
     }
-    # options.add_argument("--start-maximized")
+    options.add_argument("--start-maximized")
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_experimental_option("prefs", prefs)
-    return webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=options)
+    return webdriver.Chrome(options=options)
 
 def Captcha_solving(driver, index, wait):
     for attempt in range(3):
