@@ -5,13 +5,14 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException
+from selenium.common.exceptions import ElementClickInterceptedException, TimeoutException, NoSuchElementException
 from pydub import AudioSegment
 from pydub.utils import which
 from word_extractor import transcribe_wav_to_digits
 from config import month_name_to_number,quarter_text_map,get_quarter_from_month,month_small_to_big,TIMEOUT
 import smtplib
 from email.message import EmailMessage
+import zipfile
 
 # Set ffmpeg and ffprobe paths manually
 AudioSegment.converter = which("ffmpeg")
@@ -163,7 +164,7 @@ def run_automation(excel_path, download_path, progress_callback,sender_email, se
     completed = 0
 
     for index, row in df.iterrows():
-        if row['status'] != 'no':
+        if row['status'] == 'done':
             completed += 1
             continue
 
@@ -182,6 +183,26 @@ def run_automation(excel_path, download_path, progress_callback,sender_email, se
             continue
         
         time.sleep(3)
+        
+        # --- Check for Login Success or Failure ---
+        try:
+            # Wait up to 10 seconds for a reliable element on the dashboard page.
+            # We'll use the 'Return Dashboard' button itself.
+            wait.until(
+                EC.presence_of_element_located((By.XPATH, "//button[span[@title='Return Dashboard']]"))
+            )
+            print(f"[✓] Login successful for {row['username']}.")
+        
+        except TimeoutException:
+            # If the dashboard button doesn't appear, the login failed.
+            error_message = f"[✘] Login failed for {row['username']}. (Invalid credentials or bad CAPTCHA). Skipping..."
+
+            print(error_message)
+            df.at[index, 'status'] = 'login failed' # Mark as failed
+            driver.quit()
+            
+            continue # Move to the next user in the loop
+        # --- End of Login Check ---
         
         # Exit any pop-up modal safely, even if it appears twice
         while True:
@@ -216,36 +237,116 @@ def run_automation(excel_path, download_path, progress_callback,sender_email, se
             month_str=month_small_to_big.get(month_str)
         fill_timeline_details(driver, row['financial year'], dropdown_text, month_str)
 
-        all_buttons = driver.find_elements(By.XPATH, "//button[text()='Download']")
-        time.sleep(1)
-        
-        if len(all_buttons) > 1:
-            
+        try:
+            # --- 1. Find and Click GSTR2B Download Button ---
+            gstr2b_xpath = (
+                "//p[@data-ng-bind='x.return_ty' and text()='GSTR2B']"
+                "/ancestor::div[contains(@data-ng-class, 'disableTable')]//button[text()='Download']"
+            )
+            gstr2b_download_button = wait.until(
+                EC.element_to_be_clickable((By.XPATH, gstr2b_xpath))
+            )
+            gstr2b_download_button.click()
+
+            # --- 2. Find and Click "Generate Excel File" Button ---
+            generate_button = wait.until(
+                EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'GENERATE EXCEL FILE')]"))
+            )
+
+            # Get file list *before* clicking, in case it's a single (Case 1) download
             before_files = set(os.listdir(download_path))
-            
-            all_buttons[1].click()
-            time.sleep(1)
-            driver.find_element(By.XPATH, "//button[contains(text(), 'GENERATE EXCEL FILE')]").click()
+            generate_button.click()
+
+            # Wait for page to react (either start download or show table)
             time.sleep(5)
-            
-            downloaded_filename = wait_for_new_file(download_path, before_files, timeout=TIMEOUT)
-            if downloaded_filename:
-                full_path = os.path.abspath(os.path.join(download_path, downloaded_filename))
-                df.at[index, 'downloaded_file_path'] = full_path
+
+            downloaded_files_list = []  # Will store all downloaded file paths
+            table_links_xpath = "//table[contains(@class, 'align-table')]//a[text()='Download here']"
+
+            try:
+                # --- 3. (Case 2) Check for the table of multiple files ---
+                short_wait = WebDriverWait(driver, 5)  # 5-second wait for the table
+                download_links = short_wait.until(
+                    EC.presence_of_all_elements_located((By.XPATH, table_links_xpath))
+                )
+
+                print(f"[i] Found {len(download_links)} files in the table. Downloading all...")
+
+                for i in range(len(download_links)):
+                    try:
+                        # Re-find link each time to avoid StaleElementReferenceException
+                        current_link = short_wait.until(
+                            EC.presence_of_all_elements_located((By.XPATH, table_links_xpath))
+                        )[i]
+
+                        link_before_files = set(os.listdir(download_path))  # Check files right before click
+                        current_link.click()
+
+                        new_filename = wait_for_new_file(download_path, link_before_files, timeout=TIMEOUT)
+
+                        if new_filename:
+                            full_path = os.path.abspath(os.path.join(download_path, new_filename))
+                            downloaded_files_list.append(full_path)
+                            print(f"  [✓] Downloaded: {new_filename}")
+                            time.sleep(2)  # Brief pause
+                        else:
+                            print(f"  [✘] Clicked a link but no download was detected.")
+                    except Exception as e:
+                        print(f"  [✘] Error clicking download link #{i + 1}: {e}")
+
+            except TimeoutException:
+                # --- 3. (Case 1) No table appeared, check for single file ---
+                print("[i] No download table found. Checking for single file download.")
+                new_filename = wait_for_new_file(download_path, before_files, timeout=TIMEOUT)
+
+                if new_filename:
+                    full_path = os.path.abspath(os.path.join(download_path, new_filename))
+                    downloaded_files_list.append(full_path)
+
+            # --- 4. Process all downloaded files (for both cases) ---
+            if downloaded_files_list:
                 df.at[index, 'status'] = 'done'
-                print(f"[✓] File downloaded: {downloaded_filename}")
-                
+                print(f"[✓] Total files downloaded for {row['username']}: {len(downloaded_files_list)}")
+
+                final_attachment_path = ""
+
+                if len(downloaded_files_list) == 1:
+                    # If only one file, send it directly
+                    final_attachment_path = downloaded_files_list[0]
+                    df.at[index, 'downloaded_file_path'] = final_attachment_path
+                else:
+                    # If multiple files, ZIP them
+                    zip_filename = (
+                        f"{row['username']}_GSTR2B_{row['month']}_{row['financial year']}.zip"
+                    ).replace("/", "-")
+                    final_attachment_path = os.path.abspath(os.path.join(download_path, zip_filename))
+
+                    print(f"[i] Zipping {len(downloaded_files_list)} files into {zip_filename}...")
+                    with zipfile.ZipFile(final_attachment_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                        for file_path in downloaded_files_list:
+                            zipf.write(file_path, os.path.basename(file_path))
+
+                    df.at[index, 'downloaded_file_path'] = final_attachment_path  # Store the zip path
+
+                # Send the email with the single attachment (either the 1 file or the 1 zip)
                 send_email_with_attachment(
                     to_email=row['email'],
-                    file_path=full_path,
+                    file_path=final_attachment_path,
                     sender_email=sender_email,
                     sender_password=sender_password,
                     email_subject=email_subject,
                     email_body=email_body
                 )
+
             else:
+                # No files were downloaded in EITHER case
                 df.at[index, 'status'] = 'no'
                 print(f"[✘] Download failed or timed out for user {row['username']}")
+
+        except (NoSuchElementException, TimeoutException) as e:
+            # This block runs if the GSTR2B *main download button* was not found
+            print(f"[✘] Could not find the 'GSTR2B' Download button for user {row['username']}. Skipping. Error: {e}")
+            df.at[index, 'status'] = 'no'
              
         driver.quit()
         completed += 1
